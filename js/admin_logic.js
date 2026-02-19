@@ -49,24 +49,34 @@ async function initDashboard() {
 
 async function loadData() {
     // 1. Cargar Directorio desde Supabase (Tabla: directorio_final)
+    // Asegúrate de que en esta tabla existan las columnas: torre, depto, nombre, telefono
     const { data: directorio, error: errDir } = await supabase
         .from('directorio_final')
         .select('*');
 
     if (errDir) throw errDir;
 
+    // Reiniciamos el directorio para evitar duplicados al refrescar
+    dashboardData.directory = {};
+
     directorio.forEach(row => {
         const key = `${row.torre}_${row.depto}`;
+        
+        // Convertimos el teléfono a String por si en Supabase viene como número
+        // Si la columna se llama diferente a 'telefono', cámbiala aquí
+        const telString = row.telefono ? String(row.telefono) : '---';
+
         dashboardData.directory[key] = {
             nombre: row.nombre,
-            telefono: row.telefono || '---'
+            telefono: telString
         };
+        
         if (dashboardData.statsPerTower[row.torre]) {
             dashboardData.statsPerTower[row.torre].total++;
         }
     });
 
-    // 2. Cargar Votos desde Supabase (Tabla: votos)
+    // 2. Cargar Votos (Se mantiene igual)
     const { data: votos, error: errVotos } = await supabase
         .from('votos')
         .select('*');
@@ -76,19 +86,14 @@ async function loadData() {
     votos.forEach(vote => {
         const unitKey = `${vote.torre}_${vote.departamento}`;
         dashboardData.voted.add(unitKey);
-
         if (dashboardData.statsPerTower[vote.torre]) {
             dashboardData.statsPerTower[vote.torre].voted++;
         }
-
         if (dashboardData.votesByOption.hasOwnProperty(vote.opcion)) {
             dashboardData.votesByOption[vote.opcion]++;
         }
     });
 }
-
-// ... (Las funciones renderAllGrids, renderTowerGrid, openWhatsApp, etc. se mantienen igual 
-// pero asegúrate de que usen window.nombreFuncion para ser llamadas desde el HTML)
 
 function renderAllGrids() {
     ['T1', 'T2', 'T3'].forEach(t => renderTowerGrid(t));
@@ -132,12 +137,23 @@ function renderTowerGrid(towerId) {
 }
 
 function openWhatsApp(phone, torre, depto) {
-    if (!phone || phone === '---') {
-        alert(`No hay teléfono para el Dpto ${depto}`);
+    // Validamos que el teléfono exista y sea útil
+    if (!phone || phone === '---' || phone === 'null' || phone === 'undefined') {
+        alert(`No hay un número válido registrado para el Dpto ${depto} de la Torre ${torre}.`);
         return;
     }
-    const cleanPhone = phone.replace(/\D/g, '');
-    const message = encodeURIComponent(`Estimado vecino del ${depto} (Torre ${torre}), aún no se registra su voto de pintura. Las votaciones cierran hoy a las 16:00. Atte. Administración.`);
+
+    // Forzamos que sea String antes de usar .replace() para evitar el error
+    const phoneStr = String(phone);
+    const cleanPhone = phoneStr.replace(/\D/g, '');
+
+    if (cleanPhone.length < 7) {
+        alert("El número registrado parece estar incompleto.");
+        return;
+    }
+
+    const message = encodeURIComponent(`Estimado vecino del ${depto} (Torre ${torre}), aún no se registra su voto sobre la elección de pintura. Las votaciones cierran hoy a las 16:00 hrs. Atte. La Administración`);
+    
     window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
 }
 
@@ -207,3 +223,4 @@ function downloadReport() {
     a.download = 'reporte_votos_esmeralda.csv';
     a.click();
 }
+
