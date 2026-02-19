@@ -157,26 +157,33 @@ function renderWelcome(vecino) {
 function renderVoting() {
     const main = document.getElementById('main-content');
     main.innerHTML = `
-        <section id="voting-section">
-            <h2>Selección de Fachada</h2>
-            <p>Elige el color para la renovación:</p>
-            <div class="options-container">
-                <div class="option-card" id="card-azul" onclick="window.selectOption('Azul Real', 'card-azul')">
-                    <div class="color-preview" style="background:#2980b9"></div>
-                    <h3>Azul Real</h3>
+        <section id="voting-section" style="padding: 0.5rem;">
+            <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Selección de Fachada</h2>
+            <p style="font-size: 0.85rem; margin-bottom: 1rem;">Elige un color para la renovación:</p>
+            
+            <div class="options-container" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="option-card" id="card-azul" onclick="window.selectOption('Azul Real', 'card-azul')" 
+                     style="display: flex; align-items: center; padding: 8px; height: 60px;">
+                    <div class="color-preview" style="background:#2980b9; width: 40px; height: 40px; border-radius: 8px; margin-right: 15px;"></div>
+                    <h3 style="font-size: 1rem; margin: 0;">Azul Real</h3>
                 </div>
-                <div class="option-card" id="card-beige" onclick="window.selectOption('Beige Arena', 'card-beige')">
-                    <div class="color-preview" style="background:#f5f5dc; border:1px solid #ddd;"></div>
-                    <h3>Beige Arena</h3>
+                
+                <div class="option-card" id="card-beige" onclick="window.selectOption('Beige Arena', 'card-beige')" 
+                     style="display: flex; align-items: center; padding: 8px; height: 60px;">
+                    <div class="color-preview" style="background:#f5f5dc; width: 40px; height: 40px; border-radius: 8px; margin-right: 15px; border:1px solid #ddd;"></div>
+                    <h3 style="font-size: 1rem; margin: 0;">Beige Arena</h3>
                 </div>
-                <div class="option-card" id="card-esmeralda" onclick="window.selectOption('Verde Esmeralda', 'card-esmeralda')">
-                    <div class="color-preview" style="background:#27ae60"></div>
-                    <h3>Verde Esmeralda</h3>
+                
+                <div class="option-card" id="card-esmeralda" onclick="window.selectOption('Verde Esmeralda', 'card-esmeralda')" 
+                     style="display: flex; align-items: center; padding: 8px; height: 60px;">
+                    <div class="color-preview" style="background:#27ae60; width: 40px; height: 40px; border-radius: 8px; margin-right: 15px;"></div>
+                    <h3 style="font-size: 1rem; margin: 0;">Verde Esmeralda</h3>
                 </div>
             </div>
-            <div id="confirm-zone" style="margin-top: 2rem; display:none;">
-                <p id="selection-text" style="font-weight: bold; color: #2c3e50;"></p>
-                <button class="btn-confirm" onclick="window.processVote()">Confirmar mi Voto</button>
+
+            <div id="confirm-zone" style="margin-top: 1rem; display:none; text-align: center; border-top: 1px solid #eee; padding-top: 1rem;">
+                <p id="selection-text" style="font-weight: bold; color: #2c3e50; font-size: 0.9rem; margin-bottom: 0.5rem;"></p>
+                <button class="btn-confirm" onclick="window.processVote()" style="width: 100%; padding: 12px;">Confirmar mi Voto</button>
             </div>
         </section>
     `;
@@ -245,5 +252,6 @@ function renderError(msg) {
     const main = document.getElementById('main-content');
     main.innerHTML = `<section id="error-section"><h2>Error</h2><p>${msg}</p><button class="btn-primary" onclick="location.reload()">Reintentar</button></section>`;
 }
+
 
 
