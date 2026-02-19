@@ -1,6 +1,11 @@
 /**
  * Main JS for Painting Voting SPA - Supabase Cloud Version
  */
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl = 'https://vflhnomgfpjthiffpeke.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbGhub21nZnBqdGhpZmZwZWtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTQyNTEsImV4cCI6MjA4NzA5MDI1MX0.oofZFScNH5kh4KGkDa48ugdH82p4z_glbX_yJi2T9mw'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 let currentUser = null;
 let currentToken = null;
@@ -248,7 +253,12 @@ async function handleTokenValidation(token) {
     `;
 
     try {
-        const response = await simulateBackendCall(token);
+        async function validateToken(token) {
+    const { data, error } = await supabase
+        .from('directorio_final') // El nombre de tu tabla en Supabase
+        .select('*')
+        .eq('token', token)
+        .single(); // Solo queremos un vecino
         if (response.success) {
             currentUser = response.data;
             if (response.alreadyVoted) {
@@ -476,3 +486,4 @@ function renderError(msg) {
         </section>
     `;
 }
+
