@@ -52,13 +52,27 @@ function renderLogin() {
     `;
 }
 
+// 1. Asegúrate de que esta línea esté al inicio con las otras globales
+window.handleManualLogin = handleManualLogin;
+
+// 2. Función de Login Manual Actualizada
 async function handleManualLogin() {
     const input = document.getElementById('token-input');
-    if (!input || !input.value) return alert('Por favor, ingresa tu llave.');
+    if (!input || !input.value.trim()) {
+        alert('Por favor, ingresa tu llave personal.');
+        return;
+    }
+    
+    // Limpiamos el token: quitamos espacios y convertimos a mayúsculas
     currentToken = input.value.trim().toUpperCase();
+    
+    console.log("Intentando acceso manual con token:", currentToken);
+    
+    // Llamamos a la validación real de Supabase
     await handleTokenValidation(currentToken);
 }
 
+// 3. Ajuste extra en handleTokenValidation (Para mayor estabilidad)
 async function handleTokenValidation(token) {
     const main = document.getElementById('main-content');
     main.innerHTML = `
@@ -69,27 +83,29 @@ async function handleTokenValidation(token) {
     `;
 
     try {
-        // BUSQUEDA EN DIRECTORIO (Usando columna 'depto')
+        // Usamos el token que llega por parámetro (sea de URL o de Input)
         const { data: userData, error: userError } = await supabase
             .from('directorio_final')
             .select('*')
-            .eq('token', token)
+            .eq('token', token) 
             .single();
 
         if (userError || !userData) {
             alert('Llave no reconocida. Por favor, verifica tu código.');
-            renderLogin();
+            renderLogin(); // Si falla, lo regresa al inicio para reintentar
             return;
         }
 
-        // Mapeamos los datos del usuario
+        // Si lo encuentra, guardamos el token globalmente por si no venía de URL
+        currentToken = token;
+
         currentUser = {
             nombre: userData.nombre,
             torre: userData.torre,
             departamento: userData.depto 
         };
 
-        // VERIFICAR VOTO PREVIO
+        // Verificación de voto existente (Se mantiene igual)
         const { data: voteData } = await supabase
             .from('votos')
             .select('*')
@@ -108,8 +124,8 @@ async function handleTokenValidation(token) {
             renderWelcome(currentUser);
         }
     } catch (e) {
-        console.error(e);
-        alert('Error de conexión. Intenta de nuevo.');
+        console.error("Error crítico:", e);
+        alert('Hubo un problema de conexión.');
         renderLogin();
     }
 }
@@ -219,3 +235,4 @@ function renderError(msg) {
     const main = document.getElementById('main-content');
     main.innerHTML = `<section id="error-section"><h2>Error</h2><p>${msg}</p><button class="btn-primary" onclick="location.reload()">Reintentar</button></section>`;
 }
+
