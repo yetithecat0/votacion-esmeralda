@@ -1,0 +1,223 @@
+/* Basic Styles for Painting Voting MVP */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+#app {
+    background: white;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+
+h1 {
+    color: #2c3e50;
+    font-size: 1.4rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+h2 {
+    color: #34495e;
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+.user-greeting {
+    background: #e8f4fd;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    display: inline-block;
+    color: #3498db;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.options-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.option-card {
+    border: 2px solid #edf2f7;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: white;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.option-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    border-color: #3498db;
+}
+
+.option-card.selected {
+    border-color: #3498db;
+    background: #f0f7ff;
+}
+
+.option-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #3498db;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.color-preview {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+}
+
+.option-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.option-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+.btn-confirm {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    width: 100%;
+    box-shadow: 0 4px 14px rgba(39, 174, 96, 0.4);
+}
+
+.btn-confirm:hover {
+    background-color: #219150;
+    transform: scale(1.02);
+}
+
+.spinner.green {
+    border-left-color: #27ae60;
+}
+
+.error-icon {
+    font-size: 3rem;
+    color: #e74c3c;
+    margin-bottom: 1rem;
+}
+
+/* Receipt Styles */
+#receipt-section {
+    padding: 1rem;
+    background: #fff;
+}
+
+.receipt-header {
+    border-bottom: 2px dashed #ddd;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.receipt-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #2c3e50;
+    letter-spacing: 1px;
+}
+
+.receipt-header p {
+    margin: 0.3rem 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.receipt-body {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.receipt-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.receipt-item.no-border {
+    border-bottom: none;
+}
+
+.receipt-item span {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.receipt-item strong {
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.receipt-footer {
+    background: #fdfdfd;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+}
+
+.receipt-footer p {
+    margin: 0.2rem 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.receipt-footer .instruction {
+    font-weight: bold;
+    color: #2980b9;
+    margin-top: 0.5rem;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: #27ae60;
+    margin-bottom: 1rem;
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
