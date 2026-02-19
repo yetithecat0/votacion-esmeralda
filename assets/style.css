@@ -20,7 +20,26 @@ body {
     max-width: 500px;
     text-align: center;
 }
+/* Ajuste para que el modal sea amigable en móviles */
+.modal-content {
+    width: 95%;          /* Casi todo el ancho en celular */
+    max-width: 450px;
+    margin: 5% auto;     /* Menos margen superior */
+    padding: 1.5rem;     /* Un poco menos de relleno */
+    position: relative;
+    max-height: 90vh;    /* No deja que el modal sea más alto que la pantalla */
+    overflow-y: auto;    /* Si el contenido es largo, hace scroll dentro del modal, no fuera */
+}
 
+.close-modal {
+    position: absolute;
+    top: 10px;           /* Más cerca del borde */
+    right: 15px;
+    font-size: 2rem;
+    line-height: 1;      /* Evita que el área del clic sea gigante */
+    padding: 10px;       /* Área de toque más grande para dedos */
+    z-index: 1001;
+}
 h1 {
     color: #2c3e50;
     font-size: 1.4rem;
@@ -220,4 +239,5 @@ h2 {
         transform: scale(1);
         opacity: 1;
     }
+
 }
