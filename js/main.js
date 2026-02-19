@@ -254,26 +254,37 @@ async function handleTokenValidation(token) {
 
     try {
         async function validateToken(token) {
+  try {
     const { data, error } = await supabase
-        .from('directorio_final') // El nombre de tu tabla en Supabase
+        .from('directorio_final') // Asegúrate que este sea el nombre exacto en Supabase
         .select('*')
         .eq('token', token)
-        .single(); // Solo queremos un vecino
-        if (response.success) {
-            currentUser = response.data;
-            if (response.alreadyVoted) {
-                renderReceipt(response.data, response.voteDetails);
-            } else {
-                renderWelcome(response.data);
-            }
-        } else {
-            alert('Esa llave no es válida. Revisa el código o contacta con administración.');
-            renderLogin();
-        }
-    } catch (e) {
-        console.error(e);
-        alert('Tuvimos un problema al validar. Intenta de nuevo.');
+        .single();
+
+    // 1. Verificamos si hubo un error de conexión o si no encontró el token
+    if (error || !data) {
+        alert('Esa llave no es válida. Revisa el código o contacta con administración.');
         renderLogin();
+        return;
+    }
+
+    // 2. Si llegamos aquí, el vecino existe. Guardamos sus datos.
+    currentUser = data;
+
+    // 3. Verificamos si ya votó (usando la columna 'ya_voto' de tu tabla)
+    if (data.ya_voto) {
+        // Si ya votó, enviamos los datos y los detalles del voto para el recibo
+        renderReceipt(data, { fecha: data.fecha_voto, hora: data.hora_voto, id: data.id_comprobante });
+    } else {
+        // Si no ha votado, bienvenida normal
+        renderWelcome(data);
+    }
+
+} catch (e) {
+    console.error("Error crítico:", e);
+    alert('Tuvimos un problema al validar. Intenta de nuevo.');
+    renderLogin();
+}
     }
 }
 
@@ -486,4 +497,5 @@ function renderError(msg) {
         </section>
     `;
 }
+
 
