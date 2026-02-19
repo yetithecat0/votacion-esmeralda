@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Votación - Residencial Esmeralda</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        /* Rediseño Compacto del Mapa de Torres */
+        body {
+            background-color: #f8fafc;
+        }
+
+        #app {
+            max-width: 900px;
+            width: 98%;
+            padding: 1rem;
+        }
+
+        .tower-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tower-btn {
+            padding: 0.5rem 1.2rem;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .tower-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .tower-container {
+            display: none;
+            background: white;
+            padding: 1rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .tower-container.active {
+            display: block;
+        }
+
+        .grid-header {
+            display: grid;
+            grid-template-columns: 60px repeat(4, 55px);
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        .tower-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .floor-row {
+            display: grid;
+            grid-template-columns: 60px repeat(4, 55px);
+            gap: 10px;
+            align-items: center;
+        }
+
+        .floor-label {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #64748b;
+            text-align: right;
+            padding-right: 0.5rem;
+        }
+
+        .depto-cell {
+            width: 55px;
+            height: 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            position: relative;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            text-decoration: none;
+            color: #334155;
+            cursor: pointer;
+        }
+
+        .depto-cell.voted {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: default;
+            border-color: #cbd5e1;
+        }
+
+        .depto-cell.voted::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: 0.6rem;
+            color: #10b981;
+        }
+
+        .depto-cell.pending {
+            border: 2px solid #10b981;
+            background: #ffffff;
+            color: #059669;
+            font-weight: bold;
+        }
+
+        .depto-cell.pending:hover {
+            background: #ecfdf5;
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Icono de WhatsApp invisible por defecto, aparece en hover */
+        .wa-icon {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            /* Icono no obstruye el clic de la celda */
+        }
+
+        .depto-cell.pending:hover .wa-icon {
+            opacity: 1;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            padding: 0.8rem;
+            background: #fff;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .stats-summary {
+            display: flex;
+            gap: 2rem;
+            background: #1e293b;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+        }
+
+        .depto-num {
+            font-weight: bold;
+        }
+
+        .admin-footer {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Modal de Resultados */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #94a3b8;
+        }
+
+        .bar-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .bar-outer {
+            background: #f1f5f9;
+            height: 14px;
+            border-radius: 7px;
+            overflow: hidden;
+        }
+
+        .bar-inner {
+            height: 100%;
+            border-radius: 7px;
+            transition: width 1s ease-out;
+        }
+
+        .tower-percentage {
+            background: #f1f5f9;
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            color: #1e293b;
+            font-size: 0.95rem;
+            margin: 0 auto 1.5rem auto;
+            width: fit-content;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .tower-percentage strong {
+            color: #3498db;
+            font-size: 1.1rem;
+            margin-left: 0.3rem;
+        }
+
+        .btn-counts {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-counts:hover {
+            background: #1a252f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="admin-auth">
+            <h1>Panel Administrativo</h1>
+            <p style="font-size: 0.9rem;">Acceso restringido. Votación de Fachada 2026.</p>
+            <input type="password" id="admin-token" placeholder="Llave Maestra">
+            <button class="btn-primary" onclick="validateAdmin()">Ver Mapa de Torres</button>
+        </div>
+
+        <div id="admin-dashboard" style="display: none;">
+            <div class="admin-header">
+                <h2>Mapa de Participación Efectiva</h2>
+                <div style="display: flex; gap: 0.8rem; align-items: center;">
+                    <button class="btn-counts" onclick="openResultsModal()">📊 Ver Conteo de Votos</button>
+                    <div class="stats-summary" id="stats-summary">
+                        <div>
+                            <small style="color: #94a3b8; font-size: 0.7rem;">LISTOS</small>
+                            <div id="total-votos" style="font-size: 1.2rem; font-weight: bold; color: #10b981;">0</div>
+                        </div>
+                        <div>
+                            <small style="color: #94a3b8; font-size: 0.7rem;">PENDIENTES</small>
+                            <div id="pending-count" style="font-size: 1.2rem; font-weight: bold; color: #f59e0b;">0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tower-perc-label" class="tower-percentage">Participación Torre 1: <strong>0%</strong></div>
+
+            <div class="tower-selector">
+                <button class="tower-btn active" onclick="switchTower('T1')">T1</button>
+                <button class="tower-btn" onclick="switchTower('T2')">T2</button>
+                <button class="tower-btn" onclick="switchTower('T3')">T3</button>
+            </div>
+
+            <div id="t1-container" class="tower-container active">
+                <div class="grid-header">
+                    <span>PISO</span>
+                    <span>01</span>
+                    <span>02</span>
+                    <span>03</span>
+                    <span>04</span>
+                </div>
+                <div id="t1-grid" class="tower-grid"></div>
+            </div>
+
+            <div id="t2-container" class="tower-container">
+                <div class="grid-header">
+                    <span>PISO</span>
+                    <span>01</span>
+                    <span>02</span>
+                    <span>03</span>
+                    <span>04</span>
+                </div>
+                <div id="t2-grid" class="tower-grid"></div>
+            </div>
+
+            <div id="t3-container" class="tower-container">
+                <div class="grid-header">
+                    <span>PISO</span>
+                    <span>01</span>
+                    <span>02</span>
+                    <span>03</span>
+                    <span>04</span>
+                </div>
+                <div id="t3-grid" class="tower-grid"></div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #f1f5f9; border: 1px solid #cbd5e1;"></div>
+                    <span>Votó</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="border: 2px solid #10b981;"></div>
+                    <span>Pendiente (WhatsApp)</span>
+                </div>
+            </div>
+
+            <div class="admin-footer">
+                <button class="btn-primary"
+                    style="background: #64748b; width: auto; padding: 0.6rem 1rem; font-size: 0.8rem;"
+                    onclick="location.href='index.html'">Cerrar Sesión</button>
+                <button class="btn-report" style="background: #1e293b; padding: 0.6rem 1rem; font-size: 0.8rem;"
+                    onclick="downloadReport()">📥 Informe CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultados de Votación -->
+    <div id="results-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeResultsModal()">&times;</span>
+            <h3 style="margin-bottom: 2rem; color: #2c3e50; text-align: center;">📊 Conteo General de Votos</h3>
+            <div id="results-bars">
+                <!-- Se llena con JS -->
+            </div>
+            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: #64748b;">
+                Total de votos registrados: <strong id="modal-total-votes">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase_config.js"></script>
+    <script src="js/admin_logic.js"></script>
+</body>
+
+</html>
