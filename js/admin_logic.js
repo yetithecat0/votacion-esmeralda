@@ -1,11 +1,13 @@
-/**
- * Admin Panel Logic - Mapa Visual de Torres (Versión Compacta con Resultados)
- */
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl = 'https://vflhnomgfpjthiffpeke.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbGhub21nZnBqdGhpZmZwZWtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTQyNTEsImV4cCI6MjA4NzA5MDI1MX0.oofZFScNH5kh4KGkDa48ugdH82p4z_glbX_yJi2T9mw'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 const MASTER_ADMIN_KEY = "ADMIN_KEY_2026";
 let dashboardData = {
     voted: new Set(),
-    directory: {}, // Key: T1_101, Value: { phone, name }
+    directory: {}, // Guardaremos aquí los datos de Supabase
     votesByOption: { "Azul Real": 0, "Beige Arena": 0, "Verde Esmeralda": 0 },
     statsPerTower: {
         T1: { total: 0, voted: 0 },
@@ -14,6 +16,13 @@ let dashboardData = {
     },
     currentTower: 'T1'
 };
+
+// Exponer funciones al HTML
+window.validateAdmin = validateAdmin;
+window.switchTower = switchTower;
+window.openResultsModal = openResultsModal;
+window.closeResultsModal = closeResultsModal;
+window.downloadReport = downloadReport;
 
 async function validateAdmin() {
     const input = document.getElementById('admin-token').value;
@@ -34,84 +43,52 @@ async function initDashboard() {
         updateTowerPercentage();
     } catch (e) {
         console.error(e);
-        alert("Error cargando el mapa de torres. Verifique los archivos de datos.");
+        alert("Error cargando el dashboard.");
     }
 }
 
 async function loadData() {
-    // Reset stats
-    dashboardData.voted = new Set();
-    dashboardData.votesByOption = { "Azul Real": 0, "Beige Arena": 0, "Verde Esmeralda": 0 };
-    dashboardData.statsPerTower = {
-        T1: { total: 0, voted: 0 },
-        T2: { total: 0, voted: 0 },
-        T3: { total: 0, voted: 0 }
-    };
+    // 1. Cargar Directorio desde Supabase (Tabla: directorio_final)
+    const { data: directorio, error: errDir } = await supabase
+        .from('directorio_final')
+        .select('*');
 
-    // 1. Load directory (CSV) for phones and master unit list
-    const csvRes = await fetch('../data/directorio.csv');
-    const csvText = await csvRes.text();
-    const rows = csvText.split('\n').slice(1);
+    if (errDir) throw errDir;
 
-    rows.forEach(row => {
-        const parts = row.split(',');
-        if (parts.length < 5) return;
-        const [torre, piso, depto, tel, prop] = parts.map(p => p.trim());
-        const key = `${torre}_${depto}`;
-
+    directorio.forEach(row => {
+        const key = `${row.torre}_${row.depto}`;
         dashboardData.directory[key] = {
-            nombre: prop,
-            telefono: tel
+            nombre: row.nombre,
+            telefono: row.telefono || '---'
         };
-
-        if (dashboardData.statsPerTower[torre]) {
-            dashboardData.statsPerTower[torre].total++;
+        if (dashboardData.statsPerTower[row.torre]) {
+            dashboardData.statsPerTower[row.torre].total++;
         }
     });
 
-    // 2. Load votes from Supabase
-    try {
-        const { data: votes, error } = await supabase
-            .from('votos')
-            .select('*');
+    // 2. Cargar Votos desde Supabase (Tabla: votos)
+    const { data: votos, error: errVotos } = await supabase
+        .from('votos')
+        .select('*');
 
-        if (error) throw error;
+    if (errVotos) throw errVotos;
 
-        votes.forEach(vote => {
-            const unitKey = `${vote.torre}_${vote.departamento}`;
-            dashboardData.voted.add(unitKey);
+    votos.forEach(vote => {
+        const unitKey = `${vote.torre}_${vote.departamento}`;
+        dashboardData.voted.add(unitKey);
 
-            if (dashboardData.statsPerTower[vote.torre]) {
-                dashboardData.statsPerTower[vote.torre].voted++;
-            }
-
-            if (dashboardData.votesByOption.hasOwnProperty(vote.opcion)) {
-                dashboardData.votesByOption[vote.opcion]++;
-            }
-        });
-    } catch (e) {
-        console.error("Error cargando votos desde Supabase:", e);
-        // Fallback local por si acaso hay datos en localStorage
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('voto_')) {
-                const unitKey = key.replace('voto_', '');
-                dashboardData.voted.add(unitKey);
-                const torre = unitKey.split('_')[0];
-                if (dashboardData.statsPerTower[torre]) {
-                    dashboardData.statsPerTower[torre].voted++;
-                }
-                const rawValue = localStorage.getItem(key);
-                try {
-                    const voteData = JSON.parse(rawValue);
-                    if (dashboardData.votesByOption.hasOwnProperty(voteData.opcion)) {
-                        dashboardData.votesByOption[voteData.opcion]++;
-                    }
-                } catch (e) { }
-            }
+        if (dashboardData.statsPerTower[vote.torre]) {
+            dashboardData.statsPerTower[vote.torre].voted++;
         }
-    }
+
+        if (dashboardData.votesByOption.hasOwnProperty(vote.opcion)) {
+            dashboardData.votesByOption[vote.opcion]++;
+        }
+    });
 }
+
+// ... (Las funciones renderAllGrids, renderTowerGrid, openWhatsApp, etc. se mantienen igual 
+// pero asegúrate de que usen window.nombreFuncion para ser llamadas desde el HTML)
 
 function renderAllGrids() {
     ['T1', 'T2', 'T3'].forEach(t => renderTowerGrid(t));
@@ -119,9 +96,9 @@ function renderAllGrids() {
 
 function renderTowerGrid(towerId) {
     const grid = document.getElementById(`${towerId.toLowerCase()}-grid`);
+    if(!grid) return;
     grid.innerHTML = '';
 
-    // Floors 16 down to 1 (Visual: 16 at top, 1 at bottom)
     for (let floor = 16; floor >= 1; floor--) {
         const row = document.createElement('div');
         row.className = 'floor-row';
@@ -144,16 +121,9 @@ function renderTowerGrid(towerId) {
                 cell.onclick = () => openWhatsApp(info ? info.telefono : '', towerId, deptoId);
             }
 
-            const waIcon = `
-                <svg class="wa-icon" viewBox="0 0 24 24" width="16" height="16" fill="#10b981">
-                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217s.231.001.332.005c.109.004.258-.041.404.309.144.35.494 1.201.537 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.101-.177.211-.077.383.101.171.448.741.96 1.196.66.586 1.214.767 1.387.852.173.087.275.072.376-.043.101-.116.434-.506.549-.68.116-.173.231-.144.39-.087s1.011.477 1.184.563c.173.087.289.13.332.202.045.072.045.419-.1.824z"/>
-                </svg>
-            `;
-
             cell.innerHTML = `
                 <span class="depto-num">${deptoId}</span>
-                ${!hasVoted ? waIcon : ''}
-                ${hasVoted ? '<span style="position:absolute; top:2px; right:4px; font-size:0.6rem; color:#10b981;">✓</span>' : ''}
+                ${hasVoted ? '<span class="check-mark">✓</span>' : ''}
             `;
             row.appendChild(cell);
         }
@@ -163,44 +133,45 @@ function renderTowerGrid(towerId) {
 
 function openWhatsApp(phone, torre, depto) {
     if (!phone || phone === '---') {
-        alert(`No hay teléfono registrado para el Dpto ${depto} de la Torre ${torre}.`);
+        alert(`No hay teléfono para el Dpto ${depto}`);
         return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = encodeURIComponent(`Estimado vecino aún no se ha registrado su voto sobre la elección de pintura. solicite su enlace de votación al número de administración. las votaciones culminan a las 16:00 hrs. de hoy Atte. la administración`);
+    const message = encodeURIComponent(`Estimado vecino del ${depto} (Torre ${torre}), aún no se registra su voto de pintura. Las votaciones cierran hoy a las 16:00. Atte. Administración.`);
     window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+}
+
+function updateStats() {
+    document.getElementById('total-votos').innerText = dashboardData.voted.size;
+    const totalUnits = Object.keys(dashboardData.directory).length;
+    document.getElementById('pending-count').innerText = totalUnits - dashboardData.voted.size;
+}
+
+function updateTowerPercentage() {
+    const t = dashboardData.currentTower;
+    const stats = dashboardData.statsPerTower[t];
+    const percentage = stats && stats.total > 0 ? ((stats.voted / stats.total) * 100).toFixed(1) : 0;
+    const label = document.getElementById('tower-perc-label');
+    if(label) label.innerHTML = `Participación Torre ${t.replace('T', '')}: <strong>${percentage}%</strong>`;
 }
 
 function switchTower(towerId) {
     dashboardData.currentTower = towerId;
     document.querySelectorAll('.tower-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tower-container').forEach(c => c.classList.remove('active'));
-
-    document.querySelector(`.tower-btn[onclick*="${towerId}"]`).classList.add('active');
-    document.getElementById(`${towerId.toLowerCase()}-container`).classList.add('active');
-
+    
+    // Buscar botón por texto si no tiene ID exacto
+    const buttons = document.querySelectorAll('.tower-btn');
+    buttons.forEach(b => { if(b.innerText.includes(towerId.replace('T',''))) b.classList.add('active') });
+    
+    const container = document.getElementById(`${towerId.toLowerCase()}-container`);
+    if(container) container.classList.add('active');
     updateTowerPercentage();
 }
 
-function updateStats() {
-    document.getElementById('total-votos').innerText = dashboardData.voted.size;
-    const totalUnitsCount = Object.keys(dashboardData.directory).length || 192;
-    document.getElementById('pending-count').innerText = totalUnitsCount - dashboardData.voted.size;
-}
-
-function updateTowerPercentage() {
-    const t = dashboardData.currentTower;
-    const stats = dashboardData.statsPerTower[t];
-    const percentage = stats.total > 0 ? ((stats.voted / stats.total) * 100).toFixed(1) : 0;
-
-    const label = document.getElementById('tower-perc-label');
-    label.innerHTML = `Participación Torre ${t.replace('T', '')}: <strong>${percentage}%</strong>`;
-}
-
 function openResultsModal() {
-    const modal = document.getElementById('results-modal');
+    document.getElementById('results-modal').style.display = 'block';
     renderResultsBars();
-    modal.style.display = 'block';
 }
 
 function closeResultsModal() {
@@ -217,38 +188,22 @@ function renderResultsBars() {
         const perc = total > 0 ? (count / total * 100).toFixed(1) : 0;
         container.innerHTML += `
             <div class="bar-container">
-                <div class="bar-label">
-                    <span>${option}</span>
-                    <span>${count} (${perc}%)</span>
-                </div>
-                <div class="bar-outer">
-                    <div class="bar-inner" style="width: ${perc}%; background-color: ${colors[option]}"></div>
-                </div>
-            </div>
-        `;
-    }
-    document.getElementById('modal-total-votes').innerText = total;
-}
-
-// Close modal when clicking outside
-window.onclick = function (event) {
-    const modal = document.getElementById('results-modal');
-    if (event.target == modal) {
-        closeResultsModal();
+                <div class="bar-label"><span>${option}</span> <span>${count} (${perc}%)</span></div>
+                <div class="bar-outer"><div class="bar-inner" style="width: ${perc}%; background-color: ${colors[option]}"></div></div>
+            </div>`;
     }
 }
 
 function downloadReport() {
     let csv = "\ufeffTorre,Departamento,Estado\n";
     for (let key in dashboardData.directory) {
-        const parts = key.split('_');
+        const [t, d] = key.split('_');
         const status = dashboardData.voted.has(key) ? 'Votado' : 'Pendiente';
-        csv += `${parts[0]},${parts[1]},${status}\n`;
+        csv += `${t},${d},${status}\n`;
     }
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'reporte_participacion.csv';
+    a.href = URL.createObjectURL(blob);
+    a.download = 'reporte_votos_esmeralda.csv';
     a.click();
 }
