@@ -2,7 +2,22 @@
  * Main JS for Painting Voting SPA - Supabase Cloud Version
  * Integrado exclusivamente con la tabla "directorio_final"
  */
+// 1. Importación (Solo funciona si el script en el HTML tiene type="module")
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
+const supabaseUrl = 'https://vflhnomgfpjthiffpeke.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbGhub21nZnBqdGhpZmZwZWtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTQyNTEsImV4cCI6MjA4NzA5MDI1MX0.oofZFScNH5kh4KGkDa48ugdH82p4z_glbX_yJi2T9mw'
+
+// Declaración única (Evita el error de "already declared")
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// 2. Hacer las funciones visibles para el HTML (Crucial para que funcionen los botones)
+window.handleManualLogin = handleManualLogin;
+window.renderVoting = renderVoting;
+window.selectOption = selectOption;
+window.processVote = processVote;
+
+// ... el resto de tu código igual
 let currentUser = null;
 let currentToken = null;
 let selectedOption = null;
@@ -303,3 +318,4 @@ function renderError(msg) {
         </section>
     `;
 }
+
