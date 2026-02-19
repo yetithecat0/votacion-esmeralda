@@ -43,11 +43,21 @@ function renderLogin() {
     const main = document.getElementById('main-content');
     if(!main) return;
     main.innerHTML = `
-        <section id="login-section">
-            <h2 style="font-size: 1.2rem; color: #2c3e50;">Bienvenido a tu Espacio de Decisión</h2>
-            <p>Por favor, ingresa tu código personal para acceder a la urna virtual.</p>
-            <input type="text" id="token-input" placeholder="Ej: 2B6EF592">
-            <button class="btn-primary" onclick="window.handleManualLogin()">Acceder con mi Llave</button>
+        <section id="login-section" style="text-align: center; padding: 2rem;">
+            <div style="margin-bottom: 2rem;">
+                <h2 style="color: #2c3e50; margin-bottom: 0.5rem;">Urna Virtual</h2>
+                <p style="color: #64748b; font-size: 0.9rem;">Residencial Esmeralda</p>
+            </div>
+            
+            <div class="card-login" style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                <p style="margin-bottom: 1.5rem; font-weight: 500;">Ingresa tu código personal:</p>
+                <input type="text" id="token-input" 
+                       placeholder="Ej: E593FE78" 
+                       style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; text-align: center; margin-bottom: 1rem; text-transform: uppercase;">
+                <button class="btn-primary" onclick="window.handleManualLogin()" style="width: 100%;">Acceder con mi Llave</button>
+            </div>
+            
+            <p style="margin-top: 2rem; font-size: 0.8rem; color: #94a3b8;">Si no tienes tu llave, contacta a la administración.</p>
         </section>
     `;
 }
@@ -235,4 +245,5 @@ function renderError(msg) {
     const main = document.getElementById('main-content');
     main.innerHTML = `<section id="error-section"><h2>Error</h2><p>${msg}</p><button class="btn-primary" onclick="location.reload()">Reintentar</button></section>`;
 }
+
 
